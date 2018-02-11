@@ -70,6 +70,7 @@ StringRef Triple::getArchTypeName(ArchType Kind) {
   case wasm64:         return "wasm64";
   case renderscript32: return "renderscript32";
   case renderscript64: return "renderscript64";
+  case lumenir:        return "lumenir";
   }
 
   llvm_unreachable("Invalid ArchType!");
@@ -143,6 +144,8 @@ StringRef Triple::getArchTypePrefix(ArchType Kind) {
 
   case riscv32:
   case riscv64:     return "riscv";
+
+  case lumenir:     return "lumenir";
   }
 }
 
@@ -299,6 +302,7 @@ Triple::ArchType Triple::getArchTypeForLLVMName(StringRef Name) {
     .Case("spir64", spir64)
     .Case("kalimba", kalimba)
     .Case("lanai", lanai)
+    .Case("lumenir", lumenir)
     .Case("shave", shave)
     .Case("wasm32", wasm32)
     .Case("wasm64", wasm64)
@@ -414,6 +418,7 @@ static Triple::ArchType parseArch(StringRef ArchName) {
     .Case("spir64", Triple::spir64)
     .StartsWith("kalimba", Triple::kalimba)
     .Case("lanai", Triple::lanai)
+    .Case("lumenir", Triple::lumenir)
     .Case("shave", Triple::shave)
     .Case("wasm32", Triple::wasm32)
     .Case("wasm64", Triple::wasm64)
@@ -622,6 +627,7 @@ static Triple::ObjectFormatType getDefaultFormat(const Triple &T) {
   case Triple::bpfel:
   case Triple::hexagon:
   case Triple::lanai:
+  case Triple::lumenir:
   case Triple::hsail:
   case Triple::hsail64:
   case Triple::kalimba:
@@ -1190,6 +1196,7 @@ static unsigned getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
   case llvm::Triple::spir:
   case llvm::Triple::kalimba:
   case llvm::Triple::lanai:
+  case llvm::Triple::lumenir:
   case llvm::Triple::shave:
   case llvm::Triple::wasm32:
   case llvm::Triple::renderscript32:
@@ -1270,6 +1277,7 @@ Triple Triple::get32BitArchVariant() const {
   case Triple::x86:
   case Triple::xcore:
   case Triple::lanai:
+  case Triple::lumenir:
   case Triple::shave:
   case Triple::wasm32:
   case Triple::renderscript32:
@@ -1303,6 +1311,7 @@ Triple Triple::get64BitArchVariant() const {
   case Triple::hexagon:
   case Triple::kalimba:
   case Triple::lanai:
+  case Triple::lumenir:
   case Triple::msp430:
   case Triple::nios2:
   case Triple::r600:
@@ -1460,6 +1469,7 @@ bool Triple::isLittleEndian() const {
   case Triple::kalimba:
   case Triple::le32:
   case Triple::le64:
+  case Triple::lumenir:
   case Triple::mips64el:
   case Triple::mipsel:
   case Triple::msp430:

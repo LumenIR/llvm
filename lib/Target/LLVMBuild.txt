@@ -25,6 +25,7 @@ subdirectories =
  AVR
  BPF
  Lanai
+ LumenIR
  Hexagon
  MSP430
  NVPTX

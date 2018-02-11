@@ -1,0 +1,9 @@
+add_llvm_library(LLVMLumenIRDesc
+  LumenIRAsmBackend.cpp
+  LumenIRMCAsmInfo.cpp
+  LumenIRMCTargetDesc.cpp
+  LumenIRMCCodeEmitter.cpp
+  LumenIRELFObjectWriter.cpp
+  LumenIRELFStreamer.cpp
+  LumenIRTargetStreamer.cpp
+)
