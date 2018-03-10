@@ -117,25 +117,41 @@ class LumenIRInst32RR<bits<20> opcode, dag outs, dag ins, string asmstr, list<da
   let Inst{2-0} = rh2;
 }
 
-/// |size|   Opcode{7}    | lh  | rh1 | Imm16                         |
-/// | 0 1| 0 c c c c c c c|d d d|x x x|i i i i i i i i i i i i i i i i|
-class LumenIRInst32RI16<bits<7> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+/// |size|   Opcode{6}    | lh  | rh1 | Imm16                         |
+/// | 0 1| 0 0 c c c c c c|d d d|x x x|i i i i i i i i i i i i i i i i|
+class LumenIRInst32RI16<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
   : LumenIRInst32<outs, ins, asmstr, pattern>
 {
   bits<3> lh;
   bits<3> rh1;
   bits<16> rh2I;
 
-  let Inst{29} = 0b0;
-  let Inst{28-22} = opcode;
+  let Inst{29-28} = 0b00;
+  let Inst{27-22} = opcode;
 
   let Inst{21-19} = lh;
   let Inst{18-16} = rh1;
   let Inst{15-0}  = rh2I;
 }
 
+/// |size|   Opcode{6}    | Rsv | rh1 | Imm16                         |
+/// | 0 1| 0 1 c c c c c c|0 0 0|x x x|i i i i i i i i i i i i i i i i|
+class LumenIRInst32VRI16<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+  : LumenIRInst32<outs, ins, asmstr, pattern>
+{
+  bits<3> rhs1;
+  bits<16> rhs2I;
 
-/// a 64-bit LumenIR instruction. RI32 instructions
+  let Inst{29-28} = 0b01;
+  let Inst{27-22} = opcode;
+
+  let Inst{21-19} = 0b000; //Reserved
+  let Inst{18-16} = rhs1;
+  let Inst{15-0}  = rhs2I;
+}
+
+
+/// a 64-bit LumenIR instructions
 class LumenIRInst64<dag outs, dag ins, string asmstr, list<dag> pattern>
   : LumenIRInst<outs, ins, asmstr, pattern>
 {
@@ -145,22 +161,76 @@ class LumenIRInst64<dag outs, dag ins, string asmstr, list<dag> pattern>
   let Size = 8;
 }
 
-/// |size|   Opcode{7}    | lh  | rh1 | Reserved 16 | Imm32 |
-/// | 1 0| 0 c c c c c c c|d d d|x x x|0 0    ... 0 |i ... i|
-class LumenIRInst64RI32<bits<7> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+
+
+/// |size|   Opcode{6}    | lh  | rh1 | Reserved 16 | Imm32 |
+/// | 1 0| 0 0 c c c c c c|d d d|x x x|0 0    ... 0 |i ... i|
+class LumenIRInst64RI32<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
   : LumenIRInst64<outs, ins, asmstr, pattern>
 {
   bits<3> lh;
   bits<3> rh1;
   bits<32> rh2I;
 
-  let Inst{61} = 0b0;
-  let Inst{60-54} = opcode;
+  let Inst{61-60} = 0b00;
+  let Inst{59-54} = opcode;
 
   let Inst{53-51} = lh;
   let Inst{50-48} = rh1;
   let Inst{47-32} = 0b0000000000000000; // reserved
   let Inst{31-0}  = rh2I;
+}
+
+/// |size|   Opcode{6}    | lhs | Rsv | Reserved 16 | Imm32 |
+/// | 1 0| 0 1 c c c c c c|d d d|0 0 0|0 0    ... 0 |i ... i|
+class LumenIRInst64I32<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+  : LumenIRInst64<outs, ins, asmstr, pattern>
+{
+  bits<3> lhs;
+  bits<32> rhs1;
+
+  let Inst{61-60} = 0b01;
+  let Inst{59-54} = opcode;
+
+  let Inst{53-51} = lhs;
+  let Inst{50-48} = 0b000; // rsv;
+  let Inst{47-32} = 0b0000000000000000; // reserved
+  let Inst{31-0}  = rhs1;
+}
+
+/// |size|   Opcode{6}    | lh  | Rsv | Imm16       | Imm32 |
+/// | 1 0| 1 0 c c c c c c|d d d|0 0 0|i i    ... i |i ... i|
+class LumenIRInst64I16I32<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+  : LumenIRInst64<outs, ins, asmstr, pattern>
+{
+  bits<3> lhs;
+  bits<16> rhs1;
+  bits<32> rhs2;
+
+  let Inst{61-60} = 0b10;
+  let Inst{59-54} = opcode;
+
+  let Inst{53-51} = lhs;
+  let Inst{50-48} = 0b000; // reserved
+  let Inst{47-32} = rhs1;
+  let Inst{31-0}  = rhs2;
+}
+
+/// |size|   Opcode{6}    | Rsv | Rsv | Imm16       | Imm32 |
+/// | 1 0| 1 1 c c c c c c|0 0 0|0 0 0|i i    ... i |i ... i|
+class LumenIRInst64VI16I32<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+  : LumenIRInst64<outs, ins, asmstr, pattern>
+{
+  bits<16> rhs1I;
+  bits<32> rhs2I;
+
+  let Inst{61-60} = 0b11;
+  let Inst{59-54} = opcode;
+
+  let Inst{53-51} = 0b000; // reserved
+  let Inst{50-48} = 0b000; // reserved
+  let Inst{47-32} = rhs1I;
+  let Inst{31-0}  = rhs2I;
 }
 
 

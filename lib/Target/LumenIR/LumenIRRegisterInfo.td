@@ -1,4 +1,4 @@
-//===-- LumenIRRegisterInfo.td - LumenIR Register defs -------------*- tablegen -*-===//
+//===-- LumenIRRegisterInfo.td - LumenIR Register defs -----*- tablegen -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -27,8 +27,15 @@ class LumenIRReg<bits<3> num,
 }
 
 // Special registers definition
-class LumenIRSpecReg<string name, list<string> altNames = []> : Register<name>
+class LumenIRSpecReg<bits<5> num,
+                     string name,
+                     list<Register> subregs = [],
+                     list<string> altNames = []>
+  : RegisterWithSubRegs<name, subregs>
 {
+  field bits<5> Num = num;
+  let HWEncoding{4-0} = num;
+
   let Namespace = "LumenIR";
   let AltNames = altNames;
 }
@@ -56,10 +63,13 @@ let Namespace = "LumenIR" in {
 
 // Special regs, accessable only by special instructions
 
-def PC    : LumenIRSpecReg<"PC">    , DwarfRegNum<[0]>;
-def SP    : LumenIRSpecReg<"SP">    , DwarfRegNum<[1]>;
-def FP    : LumenIRSpecReg<"FP">    , DwarfRegNum<[2]>;
-def FLAGS : LumenIRSpecReg<"FLAGS"> , DwarfRegNum<[3]>;
+def PC    : LumenIRSpecReg<0, "PC">    , DwarfRegNum<[0]>;
+def SP    : LumenIRSpecReg<1, "SP">    , DwarfRegNum<[1]>;
+def FP    : LumenIRSpecReg<2, "FP">    , DwarfRegNum<[2]>;
+def FLAGS : LumenIRSpecReg<3, "FLAGS"> , DwarfRegNum<[3]>;
+def RV    : LumenIRSpecReg<4, "RV">    , DwarfRegNum<[4]>;
+def RA    : LumenIRSpecReg<5, "RA">    , DwarfRegNum<[5]>;
+
 
 // 32 bit GPR regs, accessable by Move,Load and store directly encoded by 3 bits
 
@@ -118,4 +128,8 @@ def FLAGSclass : RegisterClass<"LumenIR", [i1], 1,
     add FLAGS
   )>;
 
+def sRVclass : RegisterClass<"LumenIR", [i32, f32], 32,
+  (
+    add RV
+  )>;
 

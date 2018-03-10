@@ -23,9 +23,12 @@ namespace llvm {
 namespace LumenIRISD {
 
 /// LumenIR Specific DAG Nodes
-enum NodeType {
+enum NodeType : unsigned {
   /// Start the numbering where the builtin ops leave off.
   FIRST_NUMBER = ISD::BUILTIN_OP_END,
+#define HANDLE_NODETYPE(NODE) NODE,
+#include "LumenIRISD.def"
+#undef HANDLE_NODETYPE
 };
 
 } // end of namespace LumenIRISD
@@ -48,7 +51,7 @@ public:
 
   const char *getTargetNodeName(unsigned Opcode) const override;
 
-//  SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const override;
+  SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const override;
 
 //  void ReplaceNodeResults(SDNode *N, SmallVectorImpl<SDValue> &Results,
 //                          SelectionDAG &DAG) const override;
@@ -95,22 +98,33 @@ public:
 private:
 
 
-//  bool CanLowerReturn(CallingConv::ID CallConv,
-//                      MachineFunction &MF, bool isVarArg,
-//                      const SmallVectorImpl<ISD::OutputArg> &Outs,
-//                      LLVMContext &Context) const override;
+  bool CanLowerReturn(CallingConv::ID CallConv,
+                      MachineFunction &MF, bool isVarArg,
+                      const SmallVectorImpl<ISD::OutputArg> &Outs,
+                      LLVMContext &Context) const override;
 
-//  SDValue LowerReturn(SDValue Chain, CallingConv::ID CallConv, bool isVarArg,
-//                      const SmallVectorImpl<ISD::OutputArg> &Outs,
-//                      const SmallVectorImpl<SDValue> &OutVals, const SDLoc &dl,
-//                      SelectionDAG &DAG) const override;
-//  SDValue LowerFormalArguments(SDValue Chain, CallingConv::ID CallConv,
-//                               bool isVarArg,
-//                               const SmallVectorImpl<ISD::InputArg> &Ins,
-//                               const SDLoc &dl, SelectionDAG &DAG,
-//                               SmallVectorImpl<SDValue> &InVals) const override;
-//  SDValue LowerCall(TargetLowering::CallLoweringInfo &CLI,
-//                    SmallVectorImpl<SDValue> &InVals) const override;
+  SDValue LowerReturn(SDValue Chain, CallingConv::ID CallConv, bool isVarArg,
+                      const SmallVectorImpl<ISD::OutputArg> &Outs,
+                      const SmallVectorImpl<SDValue> &OutVals, const SDLoc &dl,
+                      SelectionDAG &DAG) const override;
+
+  SDValue LowerFormalArguments(SDValue Chain, CallingConv::ID CallConv,
+                               bool isVarArg,
+                               const SmallVectorImpl<ISD::InputArg> &Ins,
+                               const SDLoc &dl, SelectionDAG &DAG,
+                               SmallVectorImpl<SDValue> &InVals) const override;
+
+  SDValue LowerCall(TargetLowering::CallLoweringInfo &CLI,
+                    SmallVectorImpl<SDValue> &InVals) const override;
+
+
+  SDValue LowerCallResult(
+    TargetLowering::CallLoweringInfo &CLI,
+    SDValue Chain,
+    SDValue Glue,
+    SDValue Callee,
+    SmallVectorImpl<SDValue> &InVals) const;
+
 
 };
 

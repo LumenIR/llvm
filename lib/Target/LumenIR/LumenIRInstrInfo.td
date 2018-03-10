@@ -30,14 +30,18 @@ def relbrtargrt_16 : Operand<OtherVT>
   let EncoderMethod = "encodeRelCondBrTarget<LumenIR::fixup_16_pcrel>";
 }
 
+
+//def AddrFI : ComplexPattern<i16, 1, "SelectAddrFI", [frameindex], []>;
+
 //===----------------------------------------------------------------------===//
 // LumenIR Type Profiles
 //===----------------------------------------------------------------------===//
 
-def SDT_LumenIRCallSeqStart : SDCallSeqStart<[SDTCisVT<0, i16>, SDTCisVT<1, i16>]>;
-def SDT_LumenIRCallSeqEnd : SDCallSeqEnd<[SDTCisVT<0, i16>, SDTCisVT<1, i16>]>;
+def SDT_LumenIRCallSeqStart : SDCallSeqStart<[SDTCisVT<0, i32>, SDTCisVT<1, i32>]>;
+def SDT_LumenIRCallSeqEnd : SDCallSeqEnd<[SDTCisVT<0, i32>, SDTCisVT<1, i32>]>;
 
-//def SDT_LumenIRCall : SDTypeProfile<0, -1, [SDTCisVT<0, iPTR>]>;
+def SDT_LumenIRRet  : SDTypeProfile<0, -1, []>;
+def SDT_LumenIRCall : SDTypeProfile<0, -1, [SDTCisVT<0, iPTR>]>;
 
 
 //===----------------------------------------------------------------------===//
@@ -45,10 +49,24 @@ def SDT_LumenIRCallSeqEnd : SDCallSeqEnd<[SDTCisVT<0, i16>, SDTCisVT<1, i16>]>;
 //===----------------------------------------------------------------------===//
 
 def LumenIRcallseq_start : SDNode<"ISD::CALLSEQ_START", SDT_LumenIRCallSeqStart,
-                              [SDNPHasChain, SDNPOutGlue]>;
-def LumenIRcallseq_end : SDNode<"ISD::CALLSEQ_END", SDT_LumenIRCallSeqEnd,
-                            [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
+                              [SDNPHasChain,
+                               SDNPOutGlue]>;
 
+def LumenIRcallseq_end : SDNode<"ISD::CALLSEQ_END", SDT_LumenIRCallSeqEnd,
+                            [SDNPHasChain,
+                             SDNPOptInGlue,
+                             SDNPOutGlue]>;
+
+def LumenIRreturn : SDNode<"LumenIRISD::RETURN", SDT_LumenIRRet,
+                           [SDNPHasChain,
+                            SDNPOptInGlue,
+                            SDNPVariadic]>;
+
+def LumenIRcall   : SDNode<"LumenIRISD::CALL", SDT_LumenIRCall,
+                           [SDNPHasChain,
+                            SDNPOptInGlue,
+                            SDNPOutGlue,
+                            SDNPVariadic]>;
 
 // Basic instructions
 //1
@@ -116,13 +134,152 @@ def FDIV_RR32 : LumenIRInst16RR<0b1111, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:
 let Defs = [SP], Uses = [SP] in
 {
   def ADJCALLSTACKDOWN : PseudoInst<(outs),
-                                (ins i16imm:$amt, i16imm:$amt2),
+                                (ins i32imm:$amt, i32imm:$amt2),
                                 "#ADJCALLSTACKDOWN",
                                 [(LumenIRcallseq_start timm:$amt, timm:$amt2)]>;
 
   def ADJCALLSTACKUP : PseudoInst<(outs),
-                              (ins i16imm:$amt1, i16imm:$amt2),
+                              (ins i32imm:$amt1, i32imm:$amt2),
                               "#ADJCALLSTACKUP",
                               [(LumenIRcallseq_end timm:$amt1, timm:$amt2)]>;
 }
+//===----------------------------------------------------------------------===//
+// Load/Store instructions
+//===----------------------------------------------------------------------===//
+
+/*
+
+let
+  mayLoad      = 1,
+  Uses         = [SP]
+in {
+  def LoadFromStack :
+    LumenIRInst64I16I32
+    <  0b000000,
+      (outs sGPR:$lhs),
+      (ins sGPR:$rhs1),
+      "fromstack[$rhs1] $lhs",
+      []
+    //[(ld frameindex:)]
+    >;
+}
+*/
+
+
+let
+  mayStore   = 1,
+  Uses = [SP]
+in {
+
+  def StoreToStackII :
+    LumenIRInst64VI16I32
+    < 0b000000,
+     (outs),
+     (ins i16imm:$rhs1I, i32imm:$rhs2I),
+     "tostack[$rhs1I] $rhs2I",
+     []
+    >;
+
+  def StoreToStackIR :
+   LumenIRInst32VRI16
+   < 0b000000,
+    (outs),
+    (ins i16imm:$rhs2I, sGPR:$rhs1),
+    "tostack[$rhs2I] $rhs1",
+    []
+   >;
+/**/
+}
+
+
+let
+  mayStore   = 1,
+  Defs = [FP],
+  Uses = [FP]
+in {
+  def PushToStackR :
+    LumenIRInst16R
+    < 0b00000001,
+     (outs),
+     (ins sGPR:$rhs1),
+     "push $rhs1",
+     []
+    >;
+}
+
+let
+  mayLoad   = 1,
+  Defs      = [FP],
+  Uses      = [FP]
+in {
+  def PopFromStackR :
+    LumenIRInst16R
+    < 0b00000001,
+     (outs sGPR:$rhs1),
+     (ins),
+     "pop $rhs1",
+     []
+    >;
+}
+
+//===----------------------------------------------------------------------===//
+// Imm to reg instructions
+//===----------------------------------------------------------------------===//
+
+def LoadData :
+  LumenIRInst64I32
+  < 0b000000,
+   (outs sGPR:$lhs),
+   (ins i32imm:$rhs1),
+   "move $lhs, $rhs1",
+   []
+  >;
+
+//===----------------------------------------------------------------------===//
+// Return instructions.
+//===----------------------------------------------------------------------===//
+
+let
+  isTerminator = 1,
+  isReturn     = 1,
+  isBarrier    = 1,
+  Defs         = [RV,SP,FP],
+  Uses         = [SP,FP]
+in {
+  def ReturnVoid : LumenIRInst16Spec<0b000000000000,
+                (outs),
+                (ins),
+                "ret",
+//                [(LumenIRreturn)]>;
+                []>;
+}
+
+let
+  isTerminator = 1,
+  isReturn     = 1,
+  isBarrier    = 1,
+  Defs         = [RV,SP,FP],
+  Uses         = [SP,FP]
+in {
+  def ReturnS : LumenIRInst16R<0b00000000,
+                (outs),
+                (ins sGPR:$rhs1),
+                "ret $rhs1",
+                [(LumenIRreturn i32:$rhs1)]>;
+
+  def ReturnD : LumenIRInst16R<0b01000000,
+                (outs),
+                (ins dGPR:$rhs1),
+                "ret $rhs1",
+                [(LumenIRreturn i64:$rhs1)]>;
+
+
+
+}
+
+
+
+
+
+
 
