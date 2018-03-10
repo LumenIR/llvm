@@ -41,12 +41,14 @@ bool LumenIRFrameLowering::canSimplifyCallFramePseudos(
 
 void LumenIRFrameLowering::emitPrologue(MachineFunction &MF,
                                     MachineBasicBlock &MBB) const {
-  llvm_unreachable("Not implemented");
+  //TODO do we need prologue?
+  //llvm_unreachable("Not implemented");
 }
 
 void LumenIRFrameLowering::emitEpilogue(MachineFunction &MF,
                                     MachineBasicBlock &MBB) const {
-  llvm_unreachable("Not implemented");
+ //TODO do we need epilogue?
+ //llvm_unreachable("Not implemented");
 }
 
 
@@ -54,8 +56,30 @@ bool LumenIRFrameLowering::spillCalleeSavedRegisters(
     MachineBasicBlock &MBB, MachineBasicBlock::iterator MI,
     const std::vector<CalleeSavedInfo> &CSI,
     const TargetRegisterInfo *TRI) const {
+  if (CSI.empty()) {
+    return false;
+  }
 
-  llvm_unreachable("Not implemented");
+  DebugLoc DL = MBB.findDebugLoc(MI);
+  unsigned CaleeSavedSize = 0;
+  MachineFunction &MF = *MBB.getParent();
+  const LumenIRSubtarget &STI = MF.getSubtarget<LumenIRSubtarget>();
+  const TargetInstrInfo &TII = *STI.getInstrInfo();
+
+  for (size_t i = CSI.size(); i !=0; --i) {
+    unsigned Reg = CSI[i - 1].getReg();
+    bool IsNotLiveIn = !MBB.isLiveIn(Reg);
+
+
+    if(IsNotLiveIn) {
+      MBB.addLiveIn(Reg);
+    }
+
+    BuildMI(MBB, MI, DL, TII.get(LumenIR::PushToStackR))
+            .addReg(Reg, getKillRegState(IsNotLiveIn));
+
+  }
+
 
   return true;
 }
@@ -65,7 +89,19 @@ bool LumenIRFrameLowering::restoreCalleeSavedRegisters(
     const std::vector<CalleeSavedInfo> &CSI,
     const TargetRegisterInfo *TRI) const {
 
-  llvm_unreachable("Not implemented");
+  if(CSI.empty()) {
+    return false;
+  }
+  DebugLoc DL = MBB.findDebugLoc(MI);
+  MachineFunction &MF = *MBB.getParent();
+  const LumenIRSubtarget &STI = MF.getSubtarget<LumenIRSubtarget>();
+  const TargetInstrInfo &TII = *STI.getInstrInfo();
+
+  for (size_t i = 0, e = CSI.size(); i != e; ++i) {
+      unsigned Reg = CSI[i].getReg();
+
+      BuildMI(MBB, MI, DL, TII.get(LumenIR::PopFromStackR), Reg);
+  }
 
   return true;
 }
@@ -87,7 +123,8 @@ void LumenIRFrameLowering::determineCalleeSaves(MachineFunction &MF,
                                             BitVector &SavedRegs,
                                             RegScavenger *RS) const {
   TargetFrameLowering::determineCalleeSaves(MF, SavedRegs, RS);
-  llvm_unreachable("Not implemented");
+  //TODO do we need to do smth?
+  //  llvm_unreachable("Not implemented");
 }
 
 } // end of namespace llvm

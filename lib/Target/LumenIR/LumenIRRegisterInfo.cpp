@@ -31,15 +31,18 @@
 #define GET_REGINFO_TARGET_DESC
 #include "LumenIRGenRegisterInfo.inc"
 
+#define DEBUG_TYPE "lumenir-registerinfo"
+
+
 using namespace llvm;
 
 LumenIRRegisterInfo::LumenIRRegisterInfo() : LumenIRGenRegisterInfo(0) {}
 
 const uint16_t *
 LumenIRRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
-  llvm_unreachable("Not implemented");
+//  llvm_unreachable("Not implemented");
 
-  return nullptr;
+  return CSR_SaveList;
 }
 
 const uint32_t *
@@ -53,7 +56,11 @@ LumenIRRegisterInfo::getCallPreservedMask(const MachineFunction &MF,
 BitVector LumenIRRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   BitVector Reserved(getNumRegs());
 
-  llvm_unreachable("Not implemented");
+
+  // do we need to add special regs that is not mentioned in ISelLowering ?
+  Reserved.set(LumenIR::SP);
+  Reserved.set(LumenIR::FP);
+
   return Reserved;
 }
 
@@ -69,12 +76,38 @@ LumenIRRegisterInfo::getLargestLegalSuperClass(const TargetRegisterClass *RC,
 void LumenIRRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
                                             int SPAdj, unsigned FIOperandNum,
                                             RegScavenger *RS) const {
-   llvm_unreachable("Not implemented");
+   //llvm_unreachable("Not implemented");
+
+  MachineInstr &MI = *II;
+
+  unsigned Opc = MI.getOpcode();
+
+  switch (Opc) {
+  case LumenIR::StoreToStackII:
+  case LumenIR::StoreToStackIR: {
+    MachineOperand &FIOperand = MI.getOperand(FIOperandNum);
+    int FI = FIOperand.getIndex();
+
+    FIOperand.ChangeToImmediate(FI);
+
+    break;
+  }
+  }
+
+  DEBUG(
+    dbgs() << "eliminateFrameIndex not implemented:";
+    MI.dump();
+    dbgs() << "\n";
+  );
 }
 
 
 unsigned LumenIRRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
-  llvm_unreachable("Not implemented");
+  return LumenIR::FP;
+}
+
+unsigned LumenIRRegisterInfo::getStackRegister(const MachineFunction &MF) const {
+  return LumenIR::SP;
 }
 
 const TargetRegisterClass *

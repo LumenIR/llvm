@@ -44,6 +44,8 @@ public:
 
   unsigned getFrameRegister(const MachineFunction &MF) const override;
 
+  unsigned getStackRegister(const MachineFunction &MF) const;
+
   const TargetRegisterClass *
   getPointerRegClass(const MachineFunction &MF,
                      unsigned Kind = 0) const override;
