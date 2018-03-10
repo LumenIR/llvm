@@ -1,6 +1,7 @@
 set(LLVM_TARGET_DEFINITIONS LumenIR.td)
 
 tablegen(LLVM LumenIRGenAsmWriter.inc -gen-asm-writer)
+tablegen(LLVM LumenIRGenCallingConv.inc -gen-callingconv)
 tablegen(LLVM LumenIRGenDAGISel.inc -gen-dag-isel)
 tablegen(LLVM LumenIRGenRegisterInfo.inc -gen-register-info)
 tablegen(LLVM LumenIRGenInstrInfo.inc -gen-instr-info)

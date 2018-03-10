@@ -11,7 +11,7 @@ include "llvm/Target/Target.td"
 
 include "LumenIRRegisterInfo.td"
 include "LumenIRInstrInfo.td"
-
+include "LumenIRCallingConv.td"
 
 def LumenIRInstrInfo : InstrInfo;
 
