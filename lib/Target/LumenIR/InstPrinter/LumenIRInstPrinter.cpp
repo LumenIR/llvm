@@ -37,7 +37,8 @@ void LumenIRInstPrinter::printInst(const MCInst *MI, raw_ostream &O,
                                StringRef Annot, const MCSubtargetInfo &STI) {
   unsigned Opcode = MI->getOpcode();
 
-  llvm_unreachable("Not implemented");
+  printInstruction(MI, O);
+  printAnnotation(O, Annot);
 }
 
 void LumenIRInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
@@ -45,7 +46,16 @@ void LumenIRInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
   const MCOperand &Op = MI->getOperand(OpNo);
   const MCOperandInfo &MOI = this->MII.get(MI->getOpcode()).OpInfo[OpNo];
 
-  llvm_unreachable("Not implemented");
+  if(Op.isReg()) {
+    //TODO altidx??
+    O << getRegisterName(Op.getReg(), 0);
+  } else if (Op.isImm()) {
+    O << Op.getImm();
+  } else if (Op.isFPImm()) {
+    O << Op.isFPImm();
+  } else {
+      llvm_unreachable("Unknown operand type");
+  }
 }
 
 /// This is used to print an immediate value that ends up

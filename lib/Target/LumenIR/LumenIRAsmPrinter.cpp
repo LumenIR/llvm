@@ -57,6 +57,9 @@ public:
 
 private:
   const MCRegisterInfo &MRI;
+
+  MCInst lowerInstruction(const MachineInstr &MI);
+
 };
 
 bool LumenIRAsmPrinter::PrintAsmOperand(const MachineInstr *MI, unsigned OpNum,
@@ -75,7 +78,7 @@ bool LumenIRAsmPrinter::PrintAsmMemoryOperand(const MachineInstr *MI,
 }
 
 void LumenIRAsmPrinter::EmitInstruction(const MachineInstr *MI) {
-  llvm_unreachable("Not implemented");
+  EmitToStreamer(*OutStreamer, lowerInstruction(*MI));
 }
 
 } // end of namespace llvm
@@ -84,3 +87,31 @@ extern "C" void LLVMInitializeLumenIRAsmPrinter() {
   RegisterAsmPrinter<LumenIRAsmPrinter> X(getTheLumenIRTarget());
 }
 
+
+MCInst LumenIRAsmPrinter::lowerInstruction(const MachineInstr &MI) {
+  MCInst Inst;
+  Inst.setOpcode(MI.getOpcode());
+
+  for (MachineOperand const &MO : MI.operands()) {
+    MCOperand MCOp;
+
+    switch (MO.getType()) {
+    default:
+      MI.print(errs());
+      llvm_unreachable("unknown or not implemented operand type");
+
+    case MachineOperand::MO_Register:
+      // Ignore implicit operands
+      if (MO.isImplicit())
+        continue;
+      MCOp = MCOperand::createReg(MO.getReg());
+      break;
+
+    case MachineOperand::MO_Immediate:
+      MCOp = MCOperand::createImm(MO.getImm());
+      break;
+    }
+    Inst.addOperand(MCOp);
+  }
+  return Inst;
+}
