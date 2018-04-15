@@ -11,8 +11,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "LumenIRMCTargetDesc.h"
 #include "LumenIRMCAsmInfo.h"
+#include "LumenIRMCTargetDesc.h"
 #include "LumenIRELFStreamer.h"
 #include "LumenIRTargetStreamer.h"
 #include "InstPrinter/LumenIRInstPrinter.h"

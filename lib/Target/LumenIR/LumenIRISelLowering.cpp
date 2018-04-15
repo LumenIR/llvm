@@ -44,11 +44,14 @@ static void fail(const SDLoc &DL, SelectionDAG &DAG, StringRef msg) {
 LumenIRTargetLowering::LumenIRTargetLowering(LumenIRTargetMachine &tm)
     : TargetLowering(tm) {
   // Set up the register classes.
-  addRegisterClass(MVT::i32, &LumenIR::sGPRRegClass);
-  addRegisterClass(MVT::i64, &LumenIR::dGPRRegClass);
+  addRegisterClass(MVT::i8 , &LumenIR::GPRi8RegClass);
+  addRegisterClass(MVT::i16, &LumenIR::GPRi16RegClass);
 
-  addRegisterClass(MVT::f32, &LumenIR::sGPRRegClass);
-  addRegisterClass(MVT::f64, &LumenIR::dGPRRegClass);
+  addRegisterClass(MVT::i32, &LumenIR::GPRi32RegClass);
+  addRegisterClass(MVT::i64, &LumenIR::GPRi64RegClass);
+
+  addRegisterClass(MVT::f32, &LumenIR::GPRf32RegClass);
+  addRegisterClass(MVT::f64, &LumenIR::GPRf64RegClass);
 
   // computeRegisterProperties - Once all of the register classes are added,
   // this allows us to compute derived properties we expose.
@@ -348,7 +351,7 @@ const char *LumenIRTargetLowering::getTargetNodeName(unsigned Opcode) const {
 
 #define HANDLE_NODETYPE(NODE) \
   case LumenIRISD::NODE:     \
-    return "LumenIRISD" #NODE;
+    return "LumenIRISD::" #NODE;
 #include "LumenIRISD.def"
 
 #undef HANDLE_NODETYPE

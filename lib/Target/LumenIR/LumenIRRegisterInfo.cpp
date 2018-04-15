@@ -67,8 +67,32 @@ BitVector LumenIRRegisterInfo::getReservedRegs(const MachineFunction &MF) const 
 const TargetRegisterClass *
 LumenIRRegisterInfo::getLargestLegalSuperClass(const TargetRegisterClass *RC,
                                                const MachineFunction &MF) const {
+  const TargetRegisterInfo *TRI = MF.getSubtarget().getRegisterInfo();
 
-  llvm_unreachable("Not implemented");
+  if (TRI->isTypeLegalForClass(*RC, MVT::i8)) {
+    return &LumenIR::GPRi8RegClass;
+  }
+
+  if (TRI->isTypeLegalForClass(*RC, MVT::i16)) {
+    return &LumenIR::GPRi16RegClass;
+  }
+
+  if (TRI->isTypeLegalForClass(*RC, MVT::i32)) {
+    return &LumenIR::GPRi32RegClass;
+  }
+
+  if (TRI->isTypeLegalForClass(*RC, MVT::i64)) {
+    return &LumenIR::GPRi64RegClass;
+  }
+
+  if (TRI->isTypeLegalForClass(*RC, MVT::f32)) {
+    return &LumenIR::GPRf32RegClass;
+  }
+
+  if (TRI->isTypeLegalForClass(*RC, MVT::f64)) {
+    return &LumenIR::GPRf64RegClass;
+  }
+  llvm_unreachable("Invalid register size");
 }
 
 
@@ -83,8 +107,21 @@ void LumenIRRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   unsigned Opc = MI.getOpcode();
 
   switch (Opc) {
-  case LumenIR::StoreToStackII:
-  case LumenIR::StoreToStackIR: {
+  default:
+  {
+    DEBUG(
+      dbgs() << "eliminateFrameIndex not implemented:";
+      MI.dump();
+      dbgs() << "\n";
+    );
+  }
+  case LumenIR::StoreToStackVRI32:
+  case LumenIR::StoreToStackVRR32:
+  case LumenIR::LoadFromStack8:
+  case LumenIR::LoadFromStack16:
+  case LumenIR::LoadFromStack32:
+//  case LumenIR::LoadFromStack64: TODO
+  {
     MachineOperand &FIOperand = MI.getOperand(FIOperandNum);
     int FI = FIOperand.getIndex();
 
@@ -93,12 +130,6 @@ void LumenIRRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
     break;
   }
   }
-
-  DEBUG(
-    dbgs() << "eliminateFrameIndex not implemented:";
-    MI.dump();
-    dbgs() << "\n";
-  );
 }
 
 
@@ -113,6 +144,6 @@ unsigned LumenIRRegisterInfo::getStackRegister(const MachineFunction &MF) const 
 const TargetRegisterClass *
 LumenIRRegisterInfo::getPointerRegClass(const MachineFunction &MF,
                                     unsigned Kind) const {
-  llvm_unreachable("Not implemented");
+  return &LumenIR::GPRi64RegClass;
 }
 

@@ -1,4 +1,4 @@
-;===- ./lib/Target/LumenIR/LLVMBuild.txt -----------------------*- Conf -*--===;
+;===- ./lib/Target/LumenIR/Disassembler/LLVMBuild.txt ----------*- Conf -*--===;
 ;
 ;                     The LLVM Compiler Infrastructure
 ;
@@ -15,21 +15,9 @@
 ;
 ;===------------------------------------------------------------------------===;
 
-[common]
-subdirectories = Disassembler TargetInfo MCTargetDesc InstPrinter
-
 [component_0]
-type = TargetGroup
-name = LumenIR
-parent = Target
-has_asmprinter = 1
-has_asmparser = 0
-has_disassembler = 1
-
-[component_1]
 type = Library
-name = LumenIRCodeGen
+name = LumenIRDisassembler
 parent = LumenIR
-required_libraries = AsmPrinter CodeGen Core MC LumenIRAsmPrinter LumenIRDesc LumenIRInfo SelectionDAG Support Target
+required_libraries = MCDisassembler LumenIRInfo Support
 add_to_library_groups = LumenIR
-

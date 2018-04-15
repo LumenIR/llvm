@@ -47,7 +47,7 @@ private:
 
   bool trySelect(SDNode *N);
 
-  template <unsigned NodeType> bool select(SDNode *N);
+  template <unsigned NodeType> bool select(SDNode *N, SDNode **R);
 
   const LumenIRSubtarget *Subtarget;
 };
@@ -80,7 +80,7 @@ void LumenIRDAGToDAGISel::Select(SDNode *N) {
 
 
 template<>
-bool LumenIRDAGToDAGISel::select<ISD::Constant>(SDNode *N) {
+bool LumenIRDAGToDAGISel::select<ISD::Constant>(SDNode *N, SDNode **R) {
   const ConstantSDNode *CV = cast<ConstantSDNode>(N);
   SDLoc DL(N);
 
@@ -92,81 +92,145 @@ bool LumenIRDAGToDAGISel::select<ISD::Constant>(SDNode *N) {
 
 
   ReplaceNode(N, LoadData);
-  DEBUG(
-    dbgs() << "  selected: ";
-    LoadData->dump(CurDAG);
-    dbgs() << "\n";
-  );
+  *R = LoadData;
 
   return true;
 }
 
 template<>
-bool LumenIRDAGToDAGISel::select<ISD::STORE>(SDNode *N) {
+bool LumenIRDAGToDAGISel::select<ISD::STORE>(SDNode *N, SDNode **R) {
+  MachineRegisterInfo &RI = MF->getRegInfo();
   const StoreSDNode *ST = cast<StoreSDNode>(N);
+  SDValue Chain = ST->getChain();
+  SDLoc DL(N);
 
   if (FrameIndexSDNode *FI = dyn_cast<FrameIndexSDNode>(ST->getOperand(2))) {
+    SDValue TFI = CurDAG->getTargetFrameIndex(FI->getIndex(), MVT::i32);
+    SmallVector<SDValue, 8> Ops;
+    Ops.push_back(TFI);
+
+
     if(ConstantSDNode *V = dyn_cast<ConstantSDNode>(ST->getOperand(1))) {
-        SDValue TFI = CurDAG->getTargetFrameIndex(FI->getIndex(), MVT::i16);
-        SDValue TC  = CurDAG->getTargetConstant(*V->getConstantIntValue(),SDLoc(N), MVT::i32);
+      SDValue TC  = CurDAG->getTargetConstant(*V->getConstantIntValue(),SDLoc(N), MVT::i32);
 
+      SDNode *Reg = CurDAG->getMachineNode(LumenIR::LoadData, DL, MVT::i32, TC);
 
-        SmallVector<SDValue, 8> ops;
-        ops.push_back(TFI);
-        ops.push_back(TC);
-        ops.push_back(N->getOperand(0));
-
-        SDNode *StoreToStack = CurDAG->getMachineNode(LumenIR::StoreToStackII, SDLoc(N), MVT::Other, MVT::Glue, ops);
-
-
-        ReplaceNode(N, StoreToStack);
-        DEBUG(
-          dbgs() << "  selected: ";
-          StoreToStack->dump(CurDAG);
-          dbgs() << "\n";
-        );
-        return true;
+      Ops.push_back(SDValue(Reg,0));
+      Ops.push_back(Chain);
+    } else {
+      Ops.push_back(ST->getOperand(1));
+      Ops.push_back(Chain);
     }
-    if(RegisterSDNode *R = dyn_cast<RegisterSDNode>(ST->getOperand(1))) {
-        SDValue TFI = CurDAG->getTargetFrameIndex(FI->getIndex(), MVT::i16);
-        SDValue TR  = CurDAG->getRegister(R->getReg(), MVT::i32);
+    SDNode *StoreToStack = CurDAG->getMachineNode(LumenIR::StoreToStackVRR32, DL, MVT::Other, MVT::Glue, Ops);
 
-        SmallVector<SDValue, 8> ops;
-        ops.push_back(TFI);
-        ops.push_back(TR);
-        ops.push_back(N->getOperand(0));
+    ReplaceNode(N, StoreToStack);
+    *R = StoreToStack;
 
-        SDNode *StoreToStack = CurDAG->getMachineNode(LumenIR::StoreToStackIR, SDLoc(N), MVT::Other, MVT::Glue, ops);
+    return true;
+  }
+  return false;
+}
 
+template<>
+bool LumenIRDAGToDAGISel::select<ISD::LOAD>(SDNode *N, SDNode **R) {
+  const auto *LD = cast<LoadSDNode>(N);
+  SDValue Chain = LD->getChain();
 
-        ReplaceNode(N, StoreToStack);
-        DEBUG(
-          dbgs() << "  selected: ";
-          StoreToStack->dump(CurDAG);
-          dbgs() << "\n";
-        );
-        return true;
+  unsigned Opc = 0;
+  SmallVector<SDValue, 8> Ops;
+
+  if (auto *FI = dyn_cast<FrameIndexSDNode>(LD->getOperand(1))) {
+    switch (N->getSimpleValueType(0).SimpleTy) {
+    default:
+        llvm_unreachable("loading some type from stack is not implemented yet");
+    case MVT::i8:
+        Opc = LumenIR::LoadFromStack8;
+    case MVT::i16:
+        Opc = LumenIR::LoadFromStack16;
+    case MVT::i32:
+        Opc = LumenIR::LoadFromStack32;
+//TODO
+//    case MVT::i64:
+//        Opc = LumenIR::LoadFromStack64;
     }
+    SDValue TFI = CurDAG->getTargetFrameIndex(FI->getIndex(), MVT::i32);
+
+    Ops.push_back(TFI);
+    Ops.push_back(Chain);
+
+    SDNode *LoadFromStack = CurDAG->getMachineNode(Opc, SDLoc(N), N->getSimpleValueType(0), MVT::Glue, Ops);
+
+
+    ReplaceUses(SDValue(N, 0), SDValue(LoadFromStack,0));
+    ReplaceUses(SDValue(N, 1), SDValue(LoadFromStack,1));
+    CurDAG->RemoveDeadNode(N);
+
+//    ReplaceNode(N, LoadFromStack);
+    *R = LoadFromStack;
+    return true;
+
+  } else if (auto *GA = dyn_cast<GlobalAddressSDNode>(LD->getOperand(1))) {
+    switch (N->getSimpleValueType(0).SimpleTy) {
+    default:
+        llvm_unreachable("loading some type from stack is not implemented yet");
+    case MVT::i8:
+        Opc = LumenIR::Load8;
+    case MVT::i16:
+        Opc = LumenIR::Load16;
+    case MVT::i32:
+        Opc = LumenIR::Load32;
+//TODO
+//    case MVT::i64:
+//        Opc = LumenIR::Load64;
+    }
+    SDValue TGA = CurDAG->getTargetGlobalAddress(GA->getGlobal(), SDLoc(N), MVT::i32, 0, 0);
+
+    Ops.push_back(TGA);
+    Ops.push_back(Chain);
+
+    SDNode *Load = CurDAG->getMachineNode(Opc, SDLoc(N), N->getSimpleValueType(0), MVT::Glue, Ops);
+
+    ReplaceUses(SDValue(N, 0), SDValue(Load, 0));
+    ReplaceUses(SDValue(N, 1), SDValue(Load, 1));
+    CurDAG->RemoveDeadNode(N);
+
+    *R = Load;
+    return true;
 
   }
-
   return false;
+}
+
+template<>
+bool LumenIRDAGToDAGISel::select<ISD::FrameIndex>(SDNode *N, SDNode **R) {
+  return false;
+
+  DataLayout DL = CurDAG->getDataLayout();
+
+  int FI = cast<FrameIndexSDNode>(N)->getIndex();
+
+  auto PtrTy = getTargetLowering()->getPointerTy(DL);
+
+  SDValue TFI = CurDAG->getTargetFrameIndex(FI, PtrTy);
+
+  SDNode* GetPtr = CurDAG->getMachineNode(LumenIR::GetPtrFromFI, SDLoc(N), PtrTy, TFI);
+
+  ReplaceNode(N, GetPtr);
+  *R = GetPtr;
+
+  return true;
 }
 
 // this method need to separate return void
 template<>
-bool LumenIRDAGToDAGISel::select<LumenIRISD::RETURN>(SDNode *N) {
+bool LumenIRDAGToDAGISel::select<LumenIRISD::RETURN>(SDNode *N, SDNode **R) {
 
   if(N->getNumOperands() == 1) {
     SDNode *Return = CurDAG->getMachineNode(LumenIR::ReturnVoid, SDLoc(N), MVT::Other, N->getOperand(0));
 
     ReplaceNode(N, Return);
-    DEBUG(
-      dbgs() << "  selected: ";
-      Return->dump(CurDAG);
-      dbgs() << "\n";
-    );
 
+    *R = Return;
     return true;
   }
 
@@ -174,12 +238,28 @@ bool LumenIRDAGToDAGISel::select<LumenIRISD::RETURN>(SDNode *N) {
 }
 
 bool LumenIRDAGToDAGISel::trySelect(SDNode *N) {
+
+  bool result = false;
+  SDNode *R = nullptr;
   switch (N->getOpcode()) {
     default: return false;
-    case ISD::Constant:      return select<ISD::Constant>(N);
-    case ISD::STORE:         return select<ISD::STORE>(N);
-    case LumenIRISD::RETURN: return select<LumenIRISD::RETURN>(N);
+    case ISD::Constant:      result = select<ISD::Constant>(N, &R);         break;
+    case ISD::STORE:         result = select<ISD::STORE>(N, &R);            break;
+    case ISD::LOAD:          result = select<ISD::LOAD>(N, &R);             break;
+    case ISD::FrameIndex:    result = select<ISD::FrameIndex>(N, &R);       break;
+    case LumenIRISD::RETURN: result = select<LumenIRISD::RETURN>(N, &R);    break;
   }
+
+  DEBUG(
+    if(result) {
+      assert(R != nullptr && "select<ISD::*>() should set new SDNode or return false");
+      dbgs() << "  selected: ";
+      R->dump(CurDAG);
+      dbgs() << "\n";
+    }
+  );
+
+  return result;
 }
 
 // Complex Pattern Selectors.

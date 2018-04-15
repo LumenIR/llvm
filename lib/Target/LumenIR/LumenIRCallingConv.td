@@ -18,10 +18,11 @@
 
 def RetCC_LumenIR : CallingConv
 <[
-  CCIfType<[i1, i8, i16], CCPromoteToType<i32>>,
+//  CCIfType<[i1, i8, i16], CCPromoteToType<i32>>,
 
-  CCIfType<[i32], CCAssignToReg<[R0, R1, R2, R3, R4, R5, R6, R7]>>,
-  CCIfType<[f32], CCAssignToReg<[R0, R1, R2, R3, R4, R5, R6, R7]>>
+  CCIfType<[i8 ], CCAssignToReg<[R0_8, R1_8, R2_8, R3_8, R4_8]>>,
+  CCIfType<[i16], CCAssignToReg<[R0_16, R1_16, R2_16, R3_16, R4_16]>>,
+  CCIfType<[i32, f32], CCAssignToReg<[R0_32, R1_32, R2_32, R3_32, R4_32]>>
 ]>;
 
 
@@ -44,6 +45,6 @@ def ArgCC_LumenIR : CallingConv
 // Callee-saved register lists.
 //===----------------------------------------------------------------------===//
 
-def CSR : CalleeSavedRegs<(add R0, R1, R2, R3)>;
+def CSR : CalleeSavedRegs<(add R4_64, R5_64, R6_64, R7_64)>;
 
 

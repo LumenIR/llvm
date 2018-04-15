@@ -56,6 +56,8 @@ bool LumenIRFrameLowering::spillCalleeSavedRegisters(
     MachineBasicBlock &MBB, MachineBasicBlock::iterator MI,
     const std::vector<CalleeSavedInfo> &CSI,
     const TargetRegisterInfo *TRI) const {
+
+
   if (CSI.empty()) {
     return false;
   }
@@ -75,7 +77,26 @@ bool LumenIRFrameLowering::spillCalleeSavedRegisters(
       MBB.addLiveIn(Reg);
     }
 
-    BuildMI(MBB, MI, DL, TII.get(LumenIR::PushToStackR))
+    unsigned Opc = 0;
+
+    const TargetRegisterClass &RC = *TRI->getRegClass(Reg);
+
+    switch (RC.getID()) {
+    case LumenIR::GPRi8RegClassID:
+      Opc = LumenIR::PushToStackRRi8;
+      break;
+    case LumenIR::GPRi16RegClassID:
+      Opc = LumenIR::PushToStackRRi16;
+      break;
+    case LumenIR::GPRi32RegClassID:
+      Opc = LumenIR::PushToStackRRi32;
+      break;
+    case LumenIR::GPRi64RegClassID:
+      Opc = LumenIR::PushToStackRRi64;
+      break;
+    }
+
+    BuildMI(MBB, MI, DL, TII.get(Opc))
             .addReg(Reg, getKillRegState(IsNotLiveIn));
 
   }
@@ -100,7 +121,25 @@ bool LumenIRFrameLowering::restoreCalleeSavedRegisters(
   for (size_t i = 0, e = CSI.size(); i != e; ++i) {
       unsigned Reg = CSI[i].getReg();
 
-      BuildMI(MBB, MI, DL, TII.get(LumenIR::PopFromStackR), Reg);
+      unsigned Opc = 0;
+      const TargetRegisterClass &RC = *TRI->getRegClass(Reg);
+
+      switch (RC.getID()) {
+      case LumenIR::GPRi8RegClassID:
+        Opc = LumenIR::PopFromStack8;
+        break;
+      case LumenIR::GPRi16RegClassID:
+        Opc = LumenIR::PopFromStack16;
+        break;
+      case LumenIR::GPRi32RegClassID:
+        Opc = LumenIR::PopFromStack32;
+        break;
+      case LumenIR::GPRi64RegClassID:
+        Opc = LumenIR::PopFromStack64;
+        break;
+      }
+
+      BuildMI(MBB, MI, DL, TII.get(Opc), Reg);
   }
 
   return true;

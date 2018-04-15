@@ -69,65 +69,25 @@ def LumenIRcall   : SDNode<"LumenIRISD::CALL", SDT_LumenIRCall,
                             SDNPVariadic]>;
 
 // Basic instructions
-//1
-def IADD_RR32 : LumenIRInst16RR<0b0000, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "IADD $lhs, $rhs1, $rhs2", [(set i32:$lhs, (add i32:$rhs1, i32:$rhs2))]>;
 
-//2
-def SUBI_RR32 : LumenIRInst16RR<0b0001, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "ISUB $lhs, $rhs1, $rhs2", [(set i32:$lhs, (sub i32:$rhs1, i32:$rhs2))]>;
 
-//3
-def IMUL_RR32 : LumenIRInst16RR<0b0010, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "IMUL $lhs, $rhs1, $rhs2", [(set i32:$lhs, (mul i32:$rhs1, i32:$rhs2))]>;
+defm IADD : InstRRRScalarInt<1 , add, "IADD">;
+defm ISUB : InstRRRScalarInt<2 , sub, "ISUB">;
+defm IMUL : InstRRRScalarInt<3 , mul, "IMUL">;
 
-//4
-def AND_RR32 : LumenIRInst16RR<0b0011, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "AND $lhs, $rhs1, $rhs2", [(set i32:$lhs, (and i32:$rhs1, i32:$rhs2))]>;
+defm OR   : InstRRRScalarInt<4 , or , "OR">;
+defm XOR  : InstRRRScalarInt<5 , xor, "XOR">;
 
-//6
-def OR_RR32 : LumenIRInst16RR<0b0100, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "OR $lhs, $rhs1, $rhs2", [(set i32:$lhs, (or i32:$rhs1, i32:$rhs2))]>;
+defm SRL  : InstRRRScalarInt<6 , srl,  "SRL">;
+defm SRA  : InstRRRScalarInt<7 , sra,  "SRA">;
+defm SHL  : InstRRRScalarInt<8 , shl,  "SHL">;
+defm ROTL : InstRRRScalarInt<9 , rotl, "ROTL">;
+defm ROTR : InstRRRScalarInt<10, rotr, "ROTR">;
 
-//7
-def XOR_RR32 : LumenIRInst16RR<0b0101, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "XOR $lhs, $rhs1, $rhs2", [(set i32:$lhs, (xor i32:$rhs1, i32:$rhs2))]>;
-
-//8
-def SRL_RR32 : LumenIRInst16RR<0b0110, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "SHIFTRL $lhs, $rhs1, $rhs2", [(set i32:$lhs, (srl i32:$rhs1, i32:$rhs2))]>;
-
-//9
-def SRA_RR32 : LumenIRInst16RR<0b0111, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "SHIFTRA $lhs, $rhs1, $rhs2", [(set i32:$lhs, (sra i32:$rhs1, i32:$rhs2))]>;
-
-//10
-def SHL_RR32 : LumenIRInst16RR<0b1000, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "SHIFTL $lhs, $rhs1, $rhs2", [(set i32:$lhs, (shl i32:$rhs1, i32:$rhs2))]>;
-
-//11
-def ROTL_RR32 : LumenIRInst16RR<0b1001, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "ROTL $lhs, $rhs1, $rhs2", [(set i32:$lhs, (rotl i32:$rhs1, i32:$rhs2))]>;
-
-//12
-def ROTR_RR32 : LumenIRInst16RR<0b1010, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "ROTR $lhs, $rhs1, $rhs2", [(set i32:$lhs, (rotr i32:$rhs1, i32:$rhs2))]>;
-
-//13
-def FADD_RR32 : LumenIRInst16RR<0b1011, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "FADD $lhs, $rhs1, $rhs2", [(set f32:$lhs, (fadd f32:$rhs1, f32:$rhs2))]>;
-
-//14
-def FSUB_RR32 : LumenIRInst16RR<0b1100, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "FSUB $lhs, $rhs1, $rhs2", [(set f32:$lhs, (fsub f32:$rhs1, f32:$rhs2))]>;
-
-//15
-def FMUL_RR32 : LumenIRInst16RR<0b1101, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "FMUL $lhs, $rhs1, $rhs2", [(set f32:$lhs, (fmul f32:$rhs1, f32:$rhs2))]>;
-
-//16
-def FDIV_RR32 : LumenIRInst16RR<0b1111, (outs sGPR:$lhs), (ins sGPR:$rhs1, sGPR:$rhs2),
-  "FDIV $lhs, $rhs1, $rhs2", [(set f32:$lhs, (fdiv f32:$rhs1, f32:$rhs2))]>;
+defm FADD : InstRRRScalarFloat<11, fadd, "FADD">;
+defm FSUB : InstRRRScalarFloat<12, fsub, "FSUB">;
+defm FMUL : InstRRRScalarFloat<13, fmul, "FMUL">;
+defm FDIV : InstRRRScalarFloat<14, fdiv, "FDIV">;
 
 
 
@@ -147,97 +107,134 @@ let Defs = [SP], Uses = [SP] in
 // Load/Store instructions
 //===----------------------------------------------------------------------===//
 
-/*
-
-let
-  mayLoad      = 1,
-  Uses         = [SP]
-in {
-  def LoadFromStack :
-    LumenIRInst64I16I32
-    <  0b000000,
-      (outs sGPR:$lhs),
-      (ins sGPR:$rhs1),
-      "fromstack[$rhs1] $lhs",
-      []
-    //[(ld frameindex:)]
-    >;
-}
-*/
-
 
 let
   mayStore   = 1,
   Uses = [SP]
 in {
 
-  def StoreToStackII :
-    LumenIRInst64VI16I32
-    < 0b000000,
-     (outs),
-     (ins i16imm:$rhs1I, i32imm:$rhs2I),
-     "tostack[$rhs1I] $rhs2I",
-     []
-    >;
-
-  def StoreToStackIR :
-   LumenIRInst32VRI16
-   < 0b000000,
+  def StoreToStackVRI32 :
+   InstVIVi32
+   <T32.Coding,
+    17,
     (outs),
-    (ins i16imm:$rhs2I, sGPR:$rhs1),
-    "tostack[$rhs2I] $rhs1",
+    (ins i32imm:$rhs2I, GPRi32:$rhs1),
+    "stack[$rhs2I] = $rhs1",
     []
    >;
-/**/
+
+  def StoreToStackVRR32 :
+   InstVIVi32
+   <T32.Coding,
+    20,
+    (outs),
+    (ins GPRi32:$rhs2, GPRi32:$rhs1),
+    "stack[$rhs2] = $rhs1",
+    []
+   >;
+
 }
 
+let
+  mayStore = 1
+in {
+  defm StoreR :
+    InstVRVInt<16, "void = store($rhs1)">;
+}
 
 let
   mayStore   = 1,
   Defs = [FP],
   Uses = [FP]
 in {
-  def PushToStackR :
-    LumenIRInst16R
-    < 0b00000001,
-     (outs),
-     (ins sGPR:$rhs1),
-     "push $rhs1",
-     []
-    >;
+
+  defm PushToStack :
+    InstVRVInt<15, "void = push($rhs1)">;
+
 }
+
+
 
 let
   mayLoad   = 1,
   Defs      = [FP],
   Uses      = [FP]
 in {
-  def PopFromStackR :
-    LumenIRInst16R
-    < 0b00000001,
-     (outs sGPR:$rhs1),
-     (ins),
-     "pop $rhs1",
-     []
+
+  defm PopFromStack :
+    InstRVVInt<16, "$lhs = pop()">;
+}
+
+let
+  mayLoad   = 1,
+  Uses      = [SP]
+in {
+
+  defm LoadFromStack :
+    InstRIVInt<17, "$lhs = stack[$rhs1]">;
+
+  defm LoadFromStack :
+    InstRRVInt<17, "$lhs = stack[$rhs1]">;
+}
+
+let
+  mayLoad   = 1
+in {
+
+  def Load8 :
+    InstRIV32<
+      T8.Coding,
+      21,
+      (outs GPRi8:$lhs),
+      (ins i32imm:$rhs1),
+      "$lhs = load($rhs1)",
+      []
+//      [(set i8:$lhs, (load tglobaladdr:$rhs1))]
     >;
+
+
+  def Load16 :
+    InstRIV32<
+      T16.Coding,
+      21,
+      (outs GPRi16:$lhs),
+      (ins i32imm:$rhs1),
+      "$lhs = load($rhs1)",
+      []
+//       [(set i16:$lhs, (load tglobaladdr:$rhs1))]
+    >;
+
+  def Load32 :
+    InstRIV32<
+      T32.Coding,
+      21,
+      (outs GPRi32:$lhs),
+      (ins i32imm:$rhs1),
+      "$lhs = load($rhs1)",
+      []
+//      [(set i32:$lhs, (load tglobaladdr:$rhs1))]
+    >;
+//  defm LoadWithOffset
 }
 
 //===----------------------------------------------------------------------===//
 // Imm to reg instructions
 //===----------------------------------------------------------------------===//
 
+
 def LoadData :
-  LumenIRInst64I32
-  < 0b000000,
-   (outs sGPR:$lhs),
+  InstRIV32<T32.Coding, 16,
+   (outs GPRi32:$lhs),
    (ins i32imm:$rhs1),
-   "move $lhs, $rhs1",
+   "$lhs = data($rhs1)",
    []
   >;
 
 //===----------------------------------------------------------------------===//
 // Return instructions.
 //===----------------------------------------------------------------------===//
+
+
 
 let
   isTerminator = 1,
@@ -246,11 +243,10 @@ let
   Defs         = [RV,SP,FP],
   Uses         = [SP,FP]
 in {
-  def ReturnVoid : LumenIRInst16Spec<0b000000000000,
+  def ReturnVoid : InstVVV<19,
                 (outs),
                 (ins),
-                "ret",
-//                [(LumenIRreturn)]>;
+                "void = return()",
                 []>;
 }
 
@@ -261,25 +257,29 @@ let
   Defs         = [RV,SP,FP],
   Uses         = [SP,FP]
 in {
-  def ReturnS : LumenIRInst16R<0b00000000,
+  def Return : InstVRV<T32.Coding,
+                18,
                 (outs),
-                (ins sGPR:$rhs1),
-                "ret $rhs1",
-                [(LumenIRreturn i32:$rhs1)]>;
-
-  def ReturnD : LumenIRInst16R<0b01000000,
-                (outs),
-                (ins dGPR:$rhs1),
-                "ret $rhs1",
-                [(LumenIRreturn i64:$rhs1)]>;
-
-
+                (ins GPRi32:$rhs1),
+                "void = return($rhs1)",
+                [(LumenIRreturn T32.Type:$rhs1)]>;
 
 }
 
+//===----------------------------------------------------------------------===//
+// PTR instructions
+//===----------------------------------------------------------------------===//
 
-
-
+let
+  Uses = [SP]
+in {
+  def GetPtrFromFI : InstRRV<T64.Coding,
+                           0,
+                           (outs GPRi64:$lhs),
+                           (ins GPRi64:$rhs1),
+                           "$lhs = ptrFromFI($rhs1)",
+                           []>;
+}
 
 
 
