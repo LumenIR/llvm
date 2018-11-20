@@ -226,7 +226,9 @@ class BranchCC_rri<bits<3> funct3, string opcodestr>
 let hasSideEffects = 0, mayLoad = 1, mayStore = 0 in
 class Load_ri<bits<3> funct3, string opcodestr>
     : RVInstI<funct3, OPC_LOAD, (outs GPR:$rd), (ins GPR:$rs1, simm12:$imm12),
-              opcodestr, "$rd, ${imm12}(${rs1})">;
+              opcodestr, "$rd, ${imm12}(${rs1})"> {
+  string llr_exec_func = "exec_LOAD";
+}
 
 // Operands for stores are in the order srcreg, base, offset rather than
 // reflecting the order these fields are specified in the instruction
@@ -235,7 +237,9 @@ let hasSideEffects = 0, mayLoad = 0, mayStore = 1 in
 class Store_rri<bits<3> funct3, string opcodestr>
     : RVInstS<funct3, OPC_STORE, (outs),
               (ins GPR:$rs2, GPR:$rs1, simm12:$imm12),
-              opcodestr, "$rs2, ${imm12}(${rs1})">;
+              opcodestr, "$rs2, ${imm12}(${rs1})"> {
+  string llr_exec_func = "exec_STORE";
+}
 
 let hasSideEffects = 0, mayLoad = 0, mayStore = 0 in
 class ALU_ri<bits<3> funct3, string opcodestr>
@@ -286,10 +290,14 @@ class Priv<string opcodestr, bits<7> funct7>
 
 let hasSideEffects = 0, isReMaterializable = 1, mayLoad = 0, mayStore = 0 in {
 def LUI : RVInstU<OPC_LUI, (outs GPR:$rd), (ins uimm20:$imm20),
-                  "lui", "$rd, $imm20">;
+                  "lui", "$rd, $imm20"> {
+  string llr_exec_func = "exec_LUI";
+}
 
 def AUIPC : RVInstU<OPC_AUIPC, (outs GPR:$rd), (ins uimm20:$imm20),
-                    "auipc", "$rd, $imm20">;
+                    "auipc", "$rd, $imm20"> {
+  string llr_exec_func = "exec_AUIPC";
+}
 
 let isCall = 1 in
 def JAL : RVInstJ<OPC_JAL, (outs GPR:$rd), (ins simm21_lsb0:$imm20),
