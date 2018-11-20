@@ -200,6 +200,8 @@ class RVInstIShift<bit arithshift, bits<3> funct3, RISCVOpcode opcode,
   bits<5> rs1;
   bits<5> rd;
 
+  string llr_exec_func = "exec_SHIFT";
+
   let Inst{31} = 0;
   let Inst{30} = arithshift;
   let Inst{29-26} = 0;
@@ -216,6 +218,8 @@ class RVInstIShiftW<bit arithshift, bits<3> funct3, RISCVOpcode opcode,
   bits<5> shamt;
   bits<5> rs1;
   bits<5> rd;
+
+  string llr_exec_func = "exec_SHIFT";
 
   let Inst{31} = 0;
   let Inst{30} = arithshift;
